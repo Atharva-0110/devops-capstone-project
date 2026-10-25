@@ -229,3 +229,24 @@ class TestAccountService(TestCase):
         """It should return 204 when deleting a missing Account"""
         response = self.client.delete(BASE_URL + "/0")
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+    def test_method_not_allowed(self):
+        """It should return 405 for an unsupported HTTP method"""
+        response = self.client.put("/")
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+        data = response.get_json()
+        self.assertEqual(data["error"], "Method not Allowed")
+
+
+    def test_internal_server_error(self):
+        """It should handle an internal server error"""
+        from service.common.error_handlers import internal_server_error
+
+        response, code = internal_server_error(Exception("Test error"))
+
+        self.assertEqual(code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+        self.assertEqual(response.get_json()["error"], "Internal Server Error")
+        self.assertEqual(response.get_json()["message"], "Test error")
