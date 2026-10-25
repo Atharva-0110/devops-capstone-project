@@ -121,9 +121,8 @@ class TestAccountService(TestCase):
             json=account.serialize(),
             content_type="test/html"
         )
-        self.assertEqual(response.status_code, status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
-
-
+        self.assertEqual(response.status_code,
+                         status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
 
     def test_get_account(self):
         """It should Read an Account"""
@@ -174,7 +173,6 @@ class TestAccountService(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.get_json(), [])
 
-
     def test_update_account(self):
         """It should Update an Account"""
         test_account = self._create_accounts(1)[0]
@@ -210,7 +208,6 @@ class TestAccountService(TestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-
 
     def test_delete_account(self):
         """It should Delete an Account"""
