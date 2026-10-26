@@ -3,6 +3,8 @@
 # This pipeline needs the following tasks from Tekton Catalog
 #   - git-clone
 #   - flake8
+#   - buildah
+#   - openshift-client
 #
 ---
 apiVersion: tekton.dev/v1beta1
@@ -12,10 +14,17 @@ metadata:
 spec:
   workspaces:
     - name: pipeline-workspace
+
   params:
     - name: repo-url
+      type: string
     - name: branch
+      type: string
       default: main
+    - name: build-image
+      type: string
+      description: The image to build and push
+
   tasks:
     - name: init
       workspaces:
@@ -70,3 +79,36 @@ spec:
           value: "-v --with-spec --spec-color"
       runAfter:
         - clone
+
+    - name: build
+      workspaces:
+        - name: source
+          workspace: pipeline-workspace
+      taskRef:
+        name: buildah
+        kind: ClusterTask
+      params:
+        - name: IMAGE
+          value: $(params.build-image)
+      runAfter:
+        - lint
+        - tests
+
+    - name: deploy
+      workspaces:
+        - name: manifest-dir
+          workspace: pipeline-workspace
+      taskRef:
+        name: openshift-client
+        kind: ClusterTask
+      params:
+        - name: SCRIPT
+          value: |
+            echo "Updating manifest..."
+            sed -i "s|IMAGE_NAME_HERE|$(params.build-image)|g" deploy/deployment.yaml
+            cat deploy/deployment.yaml
+            echo "Deploying to OpenShift..."
+            oc apply -f deploy/
+            oc get pods -l app=accounts
+      runAfter:
+        - build
