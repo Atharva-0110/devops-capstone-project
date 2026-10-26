@@ -15,14 +15,13 @@ spec:
       image: alpine:3
       command: [/bin/echo]
       args: ["$(params.message)"]
-
 ---
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
   name: cleanup
 spec:
-  description: This task will clean up a workspace by deleting all of the files.
+  description: Clean up the pipeline workspace.
   workspaces:
     - name: source
   steps:
@@ -39,33 +38,27 @@ spec:
         #!/usr/bin/env sh
         set -eu
         echo "Removing all files from ${WORKSPACE_SOURCE_PATH} ..."
-        # Delete any existing contents of the directory if it exists.
-        #
-        # We don't just "rm -rf ${WORKSPACE_SOURCE_PATH}" because ${WORKSPACE_SOURCE_PATH} might be "/"
-        # or the root of a mounted volume.
-        if [ -d "${WORKSPACE_SOURCE_PATH}" ] ; then
-          # Delete non-hidden files and directories
+        if [ -d "${WORKSPACE_SOURCE_PATH}" ]; then
           rm -rf "${WORKSPACE_SOURCE_PATH:?}"/*
-          # Delete files and directories starting with . but excluding ..
           rm -rf "${WORKSPACE_SOURCE_PATH}"/.[!.]*
-          # Delete files and directories starting with .. plus any other character
           rm -rf "${WORKSPACE_SOURCE_PATH}"/..?*
         fi
-
 ---
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
-  name: nose
+  name: tests
 spec:
-  description: This task will run nosetests on the provided input.
+  description: Run nosetests on the source code.
   workspaces:
     - name: source
   params:
     - name: args
+      description: Arguments passed to the nose CLI
       type: string
       default: "-v"
     - name: database_uri
+      description: Test database connection string
       type: string
       default: "sqlite:///test.db"
   steps:
@@ -78,6 +71,8 @@ spec:
       script: |
         #!/bin/bash
         set -e
+        echo "Installing dependencies..."
         python -m pip install --upgrade pip wheel
         pip install -qr requirements.txt
+        echo "Running tests..."
         nosetests $(params.args)
