@@ -240,7 +240,6 @@ class TestAccountService(TestCase):
         data = response.get_json()
         self.assertEqual(data["error"], "Method not Allowed")
 
-
     def test_internal_server_error(self):
         """It should handle an internal server error"""
         from service.common.error_handlers import internal_server_error
