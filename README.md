@@ -1,6 +1,6 @@
 # devops-capstone-project
 
-![Build Status](https://github.com/Atharva-0110/devops-capstone-project/actions/workflows/ci-build.yaml/badge.svg)
+[![Build Status](https://github.com/Atharva-0110/devops-capstone-project/actions/workflows/ci-build.yaml/badge.svg?branch=main)](https://github.com/Atharva-0110/devops-capstone-project/actions/workflows/ci-build.yaml)
 
 ## Project Description
 
