@@ -19,10 +19,11 @@ DATABASE_URI = os.getenv(
 
 BASE_URL = "/accounts"
 
-
 ######################################################################
 #  T E S T   C A S E S
 ######################################################################
+
+
 class TestAccountService(TestCase):
     """Account Service Tests"""
 
