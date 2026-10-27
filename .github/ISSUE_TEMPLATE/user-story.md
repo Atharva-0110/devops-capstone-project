@@ -1,25 +1,29 @@
 ---
-name: User Story
-about: Create a user story for the Customer Accounts microservice
-title: ''
-labels: ''
-assignees: ''
+name: User Story Template
+about: Create a well-formatted user story using Gherkin syntax
+title: "[FEATURE] "
+labels: ""
+assignees: ""
 ---
 
-**As a** [role]
+## Feature Description
 
-**I need** [function]
+**Feature**: [Brief name of the feature]
 
-**So that** [benefit]
+**As a** [user role]
+**I need** [function or capability]
+**So that** [benefit or reason]
 
-### Details and Assumptions
+## Details and Assumptions
 
-* [document what you know]
+- [Describe relevant context and assumptions]
+- [Identify dependencies or constraints]
 
-### Acceptance Criteria
+## Acceptance Criteria
+
+### Scenario 1: [Describe the scenario]
 
 ```gherkin
-Given [some context]
-When [certain action is taken]
-Then [the outcome of action is observed]
-```
+Given [the initial context]
+When [the user performs an action]
+Then [the expected result]
