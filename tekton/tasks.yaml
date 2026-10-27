@@ -50,3 +50,34 @@ spec:
           rm -rf "${WORKSPACE_SOURCE_PATH}"/..?*
         fi
 
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: tests
+spec:
+  description: Run the Accounts service test suite.
+  workspaces:
+    - name: source
+  params:
+    - name: args
+      type: string
+      default: "-v"
+    - name: database_uri
+      type: string
+      default: "sqlite:///test.db"
+  steps:
+    - name: nosetests
+      image: python:3.9-slim
+      workingDir: $(workspaces.source.path)
+      env:
+        - name: DATABASE_URI
+          value: $(params.database_uri)
+      script: |
+        #!/bin/bash
+        set -e
+        echo "Installing dependencies..."
+        python -m pip install --upgrade pip wheel
+        pip install -qr requirements.txt
+        echo "Running tests..."
+        nosetests $(params.args)

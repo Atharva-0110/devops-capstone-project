@@ -1,38 +1,114 @@
-#
-# This pipeline needs the following tasks from Tekton Catalog
-#   - git-clone
-#   - flake8
-#
 ---
 apiVersion: tekton.dev/v1beta1
 kind: Pipeline
-metadata:  
+metadata:
   name: cd-pipeline
 spec:
   workspaces:
     - name: pipeline-workspace
+
   params:
     - name: repo-url
+      type: string
     - name: branch
+      type: string
       default: main
+    - name: build-image
+      type: string
+
   tasks:
     - name: init
-      workspaces:
-        - name: source
-          workspace: pipeline-workspace          
       taskRef:
         name: cleanup
+      workspaces:
+        - name: source
+          workspace: pipeline-workspace
 
     - name: clone
-      workspaces:
-        - name: output
-          workspace: pipeline-workspace          
       taskRef:
         name: git-clone
+        kind: ClusterTask
+      workspaces:
+        - name: output
+          workspace: pipeline-workspace
       params:
-      - name: url
-        value: $(params.repo-url)
-      - name: revision
-        value: $(params.branch)
+        - name: url
+          value: $(params.repo-url)
+        - name: revision
+          value: $(params.branch)
       runAfter:
         - init
+
+    - name: lint
+      taskRef:
+        name: flake8
+      workspaces:
+        - name: source
+          workspace: pipeline-workspace
+      params:
+        - name: requirements_file
+          value: ""
+        - name: args
+          value:
+            - --count
+            - --max-complexity=10
+            - --max-line-length=127
+            - --statistics
+      runAfter:
+        - clone
+
+    - name: tests
+      taskRef:
+        name: tests
+      workspaces:
+        - name: source
+          workspace: pipeline-workspace
+      params:
+        - name: args
+          value: "-v --with-spec --spec-color"
+        - name: database_uri
+          value: "sqlite:///test.db"
+      runAfter:
+        - clone
+
+    - name: build
+      taskRef:
+        name: buildah
+        kind: ClusterTask
+      workspaces:
+        - name: source
+          workspace: pipeline-workspace
+      params:
+        - name: IMAGE
+          value: $(params.build-image)
+        - name: BUILD_EXTRA_ARGS
+          value: "--ulimit=nproc=4096:4096"
+      runAfter:
+        - lint
+        - tests
+
+    - name: deploy
+      taskRef:
+        name: openshift-client
+        kind: ClusterTask
+      workspaces:
+        - name: manifest-dir
+          workspace: pipeline-workspace
+      params:
+        - name: SCRIPT
+          value: |
+            set -e
+            echo "Updating deployment image..."
+            sed -i "s|IMAGE_NAME_HERE|$(params.build-image)|g" deploy/deployment.yaml
+            cat deploy/deployment.yaml
+
+            echo "Applying OpenShift manifests..."
+            oc apply -f deploy/
+
+            echo "Waiting for Accounts rollout..."
+            oc rollout status deployment/accounts --timeout=180s
+
+            echo "Checking Accounts pods..."
+            oc get pods -l app=accounts
+      runAfter:
+        - build
